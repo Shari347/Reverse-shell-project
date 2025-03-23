@@ -1,93 +1,182 @@
-# 🔐 Python Reverse Shell with Persistence
+# Python Reverse Shell with Persistence
 
-This project is a simple Python-based reverse shell with multi-client support and automatic persistence. It allows an attacker machine (Mac) to remotely control victim machines (Linux VMs) by executing system commands via a terminal shell.
+This project is a Python-based reverse shell with multi-client support and automatic persistence. It allows an attacker machine (Mac) to remotely control one or more victim machines (Linux VMs) by executing system commands via a terminal shell.
 
 > **Educational Use Only** — This tool is intended for ethical hacking and cybersecurity learning in controlled environments. Do not use this on any device you don't own or have explicit permission to test.
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
-- `client.py` – Reverse shell script run on the victim (Linux VM)
+- `client.py` – Reverse shell script run on each victim machine (Linux VM)
 - `server.py` – Command & control server run on the attacker machine (Mac)
 
 ---
 
-## 🧠 Features
+## Features
 
-- 🔁 Persistent reverse shell via cron job
-- 🧵 Multi-client handling with thread-based sessions
-- 📡 Remote command execution with output streaming
-- 👻 Hidden client storage for stealth (`~/.config/.sysupdate/`)
-- 🔄 Automatic reconnect if connection is dropped
+- Persistence via cron job (auto-connects after reboot)
+- Multi-client handling (control multiple VMs)
+- Remote command execution with output handling
+- Hidden storage of client script (`~/.config/.sysupdate/`)
+- Reconnect loop if the connection fails
 
 ---
 
-## 🛠 Requirements
+## Requirements
 
-- Python 3.x
-- Mac (attacker machine)
-- Linux Virtual Machine (victim machine)
-- VirtualBox or similar virtualization platform
+- Python 3.x (installed on both Mac and Linux VMs)
+- macOS machine (attacker)
+- 2 or more Linux Virtual Machines (victims)
+- VirtualBox or similar (with networking configured properly)
 
 ---
 
 ## ⚙️ How It Works
 
 ### `client.py` (Victim Side)
-- Connects to the attacker's IP and port using TCP sockets
-- Waits for system commands from the attacker
-- Executes them via subprocess and sends output back
-- Installs itself on first run to a hidden directory and sets a cron job for persistence
+- Connects to the attacker's IP and port using a TCP socket
+- Waits for commands, executes them, and sends output back
+- Copies itself to a hidden folder and creates a `cron` job to run on startup
 
 ### `server.py` (Attacker Side)
-- Listens for incoming connections from clients
-- Maintains a list of connected clients and allows switching between them
-- Sends commands and receives results from selected client
+- Listens for incoming connections from multiple clients
+- Presents a list of connected machines to interact with
+- Sends commands and displays responses in real time
 
 ---
 
-## 🔧 Setup Instructions
+## Setup Instructions (Full Walkthrough)
 
-### ✅ Pre-Setup
-1. Use **Bridged Adapter** networking in VirtualBox for the VM
-2. Verify both Mac and VM are on the same network
-3. Ensure Python 3 is installed on both systems
+### 1. Setup Virtual Machine Network (IMPORTANT)
 
-### 📍 Get IP Addresses
-- On Mac (attacker): `ipconfig getifaddr en0`
-- On VM (victim): `ip a`
+This is **required** for your Mac and VM(s) to see each other.
 
-### 📥 Transfer `client.py` to VM
-**Option A:**
+#### On VirtualBox:
+1. Shut down each VM.
+2. Go to **Settings > Network**.
+3. Set **Adapter 1** to:
+   - **Attached to:** `Bridged Adapter`
+   - **Name:** usually `en0: Wi-Fi (AirPort)` if using Wi-Fi
+4. Click OK and **start the VM**.
+
+IMPORTANT: Please make sure to repeat this setup for **each VM** you want to use.
+
+---
+
+### 2. Find IP Addresses
+
+#### On Mac (attacker):
+```bash
+ipconfig getifaddr en0
+```
+This is your `ATTACKER_IP` you will paste into `client.py`
+
+#### On Each VM (victim):
+```bash
+ip a
+```
+✅ Check that the IP starts with something like `192.168.x.x` and is in the same range as your Mac
+
+To test:
+```bash
+ping <mac-ip-address>
+```
+You should get replies ✅
+
+---
+
+### 📥 3. Transfer `client.py` to Each VM
+
+#### Option A: **SCP (Secure Copy)**
+On your Mac:
 ```bash
 scp client.py username@<vm-ip>:/home/username/
 ```
+Replace `username` and `<vm-ip>` with your VM's actual info.
+You'll be prompted for your VM password.
 
-**Option B:** Use shared folders via VirtualBox
+#### Option B: **Shared Folder (Easier for many VMs)**
+1. In VirtualBox: Settings > Shared Folders
+2. Add a folder from your Mac (e.g. Desktop or Documents)
+3. Inside the VM, access it:
+```bash
+sudo mount -t vboxsf SharedFolderName /mnt
+cp /mnt/client.py ~/client.py
+```
+✅ Now you can run `client.py` inside the VM
 
-### 📝 Configure `client.py`
-- Edit `ATTACKER_IP` to match your Mac’s local IP
+---
 
-### ▶️ Run
-**On your Mac (attacker):**
+### 4. Edit `client.py`
+Open the script on each VM and update:
+```python
+ATTACKER_IP = "your-mac-ip"
+```
+✅ This tells the VM where to connect
+
+Leave the rest of the code unchanged. It already includes auto-persistence.
+
+---
+
+### 🖥️ 5. Start the Server on Your Mac
+Open Terminal and run:
 ```bash
 python3 server.py
 ```
-**On your VM (victim):**
+You should see:
+```
+[*] Listening for connections on 0.0.0.0:9999...
+```
+✅ This means the server is ready.
+
+---
+
+### 🤖 6. Run `client.py` on Each VM
+In each VM terminal:
 ```bash
 python3 client.py
 ```
+✅ After a few seconds, your Mac should print:
+```
+[+] New client from 192.168.x.x
+```
+You’ll see all connected VMs listed with an index number.
 
-You’ll see the client connect back and a shell will open for commands.
+---
 
-### 🔁 Test Persistence
-1. Reboot your VM:
+### 💬 7. Use the Reverse Shell
+Once clients are connected:
+- You can select a client by index (e.g. `0`, `1`, `2`)
+- Type shell commands like `whoami`, `ls`, `hostname`, `pwd`
+- Get command output in real time
+- Type `quit` to close a session and return to the menu
+
+---
+
+### 🔁 8. Test Persistence (Auto-Reconnect After Reboot)
+
+1. Reboot the VM:
 ```bash
 sudo reboot
 ```
-2. Leave `server.py` running
-3. After boot, the VM will auto-connect again
+2. Keep `server.py` running on your Mac
+3. Wait ~10–20 seconds after boot
+4. The client will **auto-connect back** due to the cron job added during the first run of `client.py`
+
+✅ You will see:
+```
+[+] New client from 192.168.x.x
+```
+again — without needing to manually run anything on the VM
+
+---
+
+## Tips
+
+- Make sure no firewall is blocking port `9999`
+- Keep VM usernames consistent for easier path management
+- You can test with 2–3 VMs at the same time for full multi-client control
 
 ---
 
@@ -96,8 +185,8 @@ This tool is for educational and authorized penetration testing only. Using it a
 
 ---
 
-## 📎 License
-MIT License — free for use in ethical and learning contexts.
+## License
+MIT License — free to use in ethical and learning contexts.
 
 ---
 
