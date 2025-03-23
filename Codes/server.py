@@ -3,7 +3,7 @@ import socket
 import threading
 
 # Listening on localhost (Mac)
-HOST = "0.0.0.0"  # Self-testing, use local loopback IP
+HOST = "0.0.0.0"  # this will listen all available networks on port 9999
 PORT = 9999
 
 #store connected clients
